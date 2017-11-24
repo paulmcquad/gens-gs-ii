@@ -48,25 +48,19 @@ extern "C" {
 #endif
 
 static unsigned int Gens_M68K_RB(void *param, unsigned int address)
-{//fprintf(stderr,"%s %.6x\n",__FUNCTION__,address);
-	/** WORKAROUND for Starscream not properly saving ecx/edx. **/
-	unsigned int data = LibGens::M68K_Mem::M68K_RB(address);//fprintf(stderr,"%s %.6x = %x\n",__FUNCTION__,address,data);
-	return data;
+{
+	return LibGens::M68K_Mem::M68K_RB(address);
 }
 static unsigned int Gens_M68K_RW(void *param, unsigned int address)
 {
-	/** WORKAROUND for Starscream not properly saving ecx/edx. **/
-	unsigned int data = LibGens::M68K_Mem::M68K_RW(address);//fprintf(stderr,"%s %.6x = %x\n",__FUNCTION__,address,data);
-	return data;
+	return LibGens::M68K_Mem::M68K_RW(address);
 }
 static void Gens_M68K_WB(void *param, unsigned int address, unsigned int data)
-{//fprintf(stderr,"%s %.6x %x\n",__FUNCTION__,address,data);
-	/** WORKAROUND for Starscream not properly saving ecx/edx. **/
+{
 	LibGens::M68K_Mem::M68K_WB(address, data);
 }
 static void Gens_M68K_WW(void *param, unsigned int address, unsigned int data)
-{//fprintf(stderr,"%s %.6x %x\n",__FUNCTION__,address,data);
-	/** WORKAROUND for Starscream not properly saving ecx/edx. **/
+{
 	LibGens::M68K_Mem::M68K_WW(address, data);
 }
 

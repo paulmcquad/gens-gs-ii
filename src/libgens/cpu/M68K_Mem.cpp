@@ -843,7 +843,7 @@ inline uint16_t M68K_Mem::M68K_Read_Word_Pico_IO(uint32_t address)
 inline void M68K_Mem::M68K_Write_Byte_Ram(uint32_t address, uint8_t data)
 {
 	address &= 0xFFFF;
-	address ^= 1;	// TODO: LE only!
+	address ^= U16DATA_U8_INVERT;
 	Ram_68k.u8[address] = data;
 }
 

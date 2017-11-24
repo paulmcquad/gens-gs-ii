@@ -1,7 +1,9 @@
 #ifndef _MACROS_H_
 #define _MACROS_H_
 
-#ifdef LSB_FIRST
+#include "libcompat/byteorder.h"
+
+#if SYS_IS_LIL_ENDIAN
 
 #define READ_BYTE(BASE, ADDR) (BASE)[(ADDR)^1]
 
