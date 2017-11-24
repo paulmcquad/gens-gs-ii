@@ -33,7 +33,6 @@
 #include "libcompat/byteswap.h"
 
 // M68K CPU.
-#include "cpu/star_68k.h"
 #include "cpu/M68K_Mem.hpp"
 #include "Cartridge/RomCartridgeMD.hpp"
 

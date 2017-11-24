@@ -30,9 +30,6 @@
 // C includes. (C++ namespace)
 #include <climits>
 
-// Starscream.
-#include "libgens/cpu/star_68k.h"
-
 namespace LibGens {
 
 class TmssReg

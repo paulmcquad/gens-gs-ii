@@ -27,9 +27,6 @@
 // C includes.
 #include <stdint.h>
 
-// Starscream.
-#include "libgens/cpu/star_68k.h"
-
 // SRam and EEPRom.
 #include "Save/SRam.hpp"
 #include "Save/EEPRomI2C.hpp"
