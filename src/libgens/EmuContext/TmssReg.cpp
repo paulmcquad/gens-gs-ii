@@ -27,6 +27,7 @@
 
 #include "EmuContext.hpp"
 #include "Rom.hpp"
+#include "cpu/M68K.hpp"
 
 // C includes. (C++ namespace)
 #include <cstdlib>
@@ -189,19 +190,11 @@ uint16_t TmssReg::readWord(uint32_t address) const
  * @param banks Maximum number of banks to update.
  * @return Number of banks updated.
  */
-int TmssReg::updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int banks)
+int TmssReg::updateSysBanking(int banks)
 {
 	((void)banks);	// unused
-#ifdef GENS_ENABLE_EMULATION
-	M68K_Fetch->lowaddr = 0x000000;
-	M68K_Fetch->highaddr = m_tmssRom_mask;
-	M68K_Fetch->offset = (uint32_t)m_tmssRom;
-	M68K_Fetch++;
+	M68K::SetFetch(0x000000, m_tmssRom_mask, m_tmssRom);
 	return 1;
-#else /* !GENS_ENABLE_EMULATION */
-	// Emulation is disabled.
-	return 0;
-#endif /* GENS_ENABLE_EMULATION */
 }
 
 }

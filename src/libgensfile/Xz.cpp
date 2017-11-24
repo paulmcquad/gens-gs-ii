@@ -253,7 +253,7 @@ int Xz::readFile(const mdp_z_entry_t *z_entry,
 	// Read the file into the buffer.
 	// Based on LZMA SDK 15.14's XzHandler.cpp: CDecoder::Decode()
 	SRes res;
-	uint32_t inSize = 0;
+	size_t inSize = 0;
 	size_t inPos = 0;
 	size_t outPos = 0;
 	*ret_siz = 0;

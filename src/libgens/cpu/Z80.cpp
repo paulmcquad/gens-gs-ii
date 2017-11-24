@@ -59,6 +59,8 @@ Z80::Z80()
 	Cz80_Set_WriteB(m_z80, Z80_MD_WriteB_static);
 	Cz80_Set_ReadW(m_z80, Z80_MD_ReadW_static);
 	Cz80_Set_WriteW(m_z80, Z80_MD_WriteW_static);
+	
+	Cz80_Set_IRQ_Callback(m_z80, Z80_MD_InterruptAck_static);
 
 	// Reinitialize the Z80.
 	reinit();
@@ -96,6 +98,13 @@ void Z80::reinit(void)
 
 	// Hard-reset the Z80.
 	hardReset();
+}
+
+uint8_t CZ80CALL Z80::Z80_MD_InterruptAck_static(void *ctx, uint8_t param)
+{
+	Z80 *const z80 = (Z80*)ctx;
+	Cz80_Clear_IRQ(z80->m_z80);
+	return param;
 }
 
 /** ZOMG savestate functions. **/

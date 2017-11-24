@@ -82,6 +82,7 @@ class Z80
 		static void CZ80CALL Z80_MD_WriteB_static(void *ctx, uint16_t address, uint8_t data);
 		static uint16_t CZ80CALL Z80_MD_ReadW_static(void *ctx, uint16_t address);
 		static void CZ80CALL Z80_MD_WriteW_static(void *ctx, uint16_t address, uint16_t data);
+		static uint8_t CZ80CALL Z80_MD_InterruptAck_static(void *ctx, uint8_t param);
 
 	public:
 		// Non-static versions.

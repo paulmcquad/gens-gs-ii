@@ -111,7 +111,7 @@ class M68K_Mem
 		 * @param banks Maximum number of banks to update.
 		 * @return Number of banks updated.
 		 */
-		static int UpdateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int banks);
+		static int UpdateSysBanking(int banks);
 
 		/** Public read/write functions. **/
 		static uint8_t M68K_RB(uint32_t address);

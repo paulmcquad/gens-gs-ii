@@ -26,7 +26,7 @@
 
 #include <libgens/config.libgens.h>
 
-#include "star_68k.h"
+#include "../m68000/m68k.h"
 
 // ZOMG M68K structs.
 #include "libzomg/zomg_m68k.h"
@@ -77,19 +77,23 @@ class M68K
 		static inline void AddCycles(int cycles);
 		static inline unsigned int Exec(int n);
 		static inline unsigned int TripOdometer(void);
+		static void SetFetch(unsigned low_addr, unsigned high_addr, void *base);
+		static void SetMemReadFunc(unsigned low_addr, unsigned high_addr,
+			unsigned int (*read8)(void *param, unsigned int address),
+			unsigned int (*read16)(void *param, unsigned int address));
+		static void SetMemWriteFunc(unsigned low_addr, unsigned high_addr,
+			void (*write8)(void *param, unsigned int address, unsigned int data),
+			void (*write16)(void *param, unsigned int address, unsigned int data));
 		/** END: Starscream wrapper functions. **/
 	
 	protected:
-		static S68000CONTEXT ms_Context;
-		
-		static STARSCREAM_PROGRAMREGION M68K_Fetch[];
-		static STARSCREAM_DATAREGION M68K_Read_Byte[4];
-		static STARSCREAM_DATAREGION M68K_Read_Word[4];
-		static STARSCREAM_DATAREGION M68K_Write_Byte[3];
-		static STARSCREAM_DATAREGION M68K_Write_Word[3];
+		static m68ki_cpu_core ms_Context;
+		static int m_cycleCnt;		// Cycles currently run.
+		static int m_intVectors[8];
 		
 		// TODO: What does the Reset Handler function do?
-		static void M68K_Reset_Handler(void);
+		static void M68K_Reset_Handler(m68ki_cpu_core *cpu);
+		static int M68K_Int_Ack(m68ki_cpu_core *cpu, int int_level);
 	
 	private:
 		M68K() { }
@@ -98,15 +102,12 @@ class M68K
 		static SysID ms_LastSysID;
 };
 
-/** BEGIN: Starscream wrapper functions. **/
-
-#ifdef GENS_ENABLE_EMULATION
 /**
  * Reset the emulated CPU.
  */
 inline void M68K::Reset(void)
 {
-	main68k_reset();
+	m68k_pulse_reset(&ms_Context);
 }
 
 /**
@@ -117,7 +118,9 @@ inline void M68K::Reset(void)
  */
 inline int M68K::Interrupt(int level, int vector)
 {
-	return main68k_interrupt(level, vector);
+	m_intVectors[level] = vector;
+	m68k_set_irq(&ms_Context, level, ASSERT_LINE);
+	return 0;
 }
 
 /**
@@ -126,7 +129,7 @@ inline int M68K::Interrupt(int level, int vector)
  */
 inline unsigned int M68K::ReadOdometer(void)
 {
-	return main68k_readOdometer();
+	return m_cycleCnt;
 }
 
 /**
@@ -135,7 +138,7 @@ inline unsigned int M68K::ReadOdometer(void)
 */
 inline void M68K::ReleaseCycles(int cycles)
 {
-	main68k_releaseCycles(cycles);
+	//main68k_releaseCycles(cycles);
 }
 
 /**
@@ -144,7 +147,7 @@ inline void M68K::ReleaseCycles(int cycles)
  */
 inline void M68K::AddCycles(int cycles)
 {
-	main68k_addCycles(cycles);
+	//main68k_addCycles(cycles);
 }
 
 /**
@@ -154,7 +157,20 @@ inline void M68K::AddCycles(int cycles)
  */
 inline unsigned int M68K::Exec(int n)
 {
-	return main68k_exec(n);
+	int cyclesToRun = n - m_cycleCnt;
+	int ret;
+	
+	if (cyclesToRun <= 0)
+		return 0;
+
+	ret = m68k_execute(&ms_Context, cyclesToRun);
+
+	if (ret >= 0)
+		m_cycleCnt += ret;
+	else
+		m_cycleCnt += cyclesToRun;
+	
+	return 0;
 }
 
 /**
@@ -163,22 +179,9 @@ inline unsigned int M68K::Exec(int n)
 */
 inline unsigned int M68K::TripOdometer(void)
 {
-	return main68k_tripOdometer();
+	m_cycleCnt = 0;
+	return 0;
 }
-
-#else /* !GENS_ENABLE_EMULATION */
-
-inline void M68K::Reset(void) { }
-inline int M68K::Interrupt(int level, int vector) { ((void)level); ((void)vector); return -1; }
-inline unsigned int M68K::ReadOdometer(void) { return 0; }
-inline void M68K::ReleaseCycles(int cycles) { ((void)cycles); }
-inline void M68K::AddCycles(int cycles) { ((void)cycles); }
-inline unsigned int M68K::Exec(int n) { ((void)n); return 0; }
-inline unsigned int M68K::TripOdometer(void) { return 0; }
-
-#endif /* GENS_ENABLE_EMULATION */
-
-/** END: Starscream wrapper functions. **/
 
 }
 

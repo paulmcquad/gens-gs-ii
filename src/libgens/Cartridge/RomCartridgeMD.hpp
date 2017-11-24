@@ -85,7 +85,7 @@ class RomCartridgeMD
 		 * @param banks Maximum number of banks to update.
 		 * @return Number of banks updated.
 		 */
-		int updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int banks);
+		int updateSysBanking(int banks);
 
 		/**
 		 * Fix the ROM checksum.

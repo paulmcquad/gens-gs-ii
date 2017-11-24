@@ -397,8 +397,8 @@ void CZ80CALL Z80::Z80_MD_WriteW_static(void *ctx, uint16_t address, uint16_t da
 	// TODO: unlikely()
 	if ((address & (CZ80_FETCH_BANK_SIZE-1)) == (CZ80_FETCH_BANK_SIZE-1)) {
 		// End of bank. Use 8-bit writes.
-		Z80_MD_WriteW_static(ctx, address, data & 0xFF);
-		Z80_MD_WriteW_static(ctx, address+1, data >> 8);
+		Z80_MD_WriteB_static(ctx, address, data & 0xFF);
+		Z80_MD_WriteB_static(ctx, address+1, data >> 8);
 		return;
 	}
 
