@@ -218,6 +218,12 @@
 #define REG_ISP          m68k->sp[4]
 #define REG_MSP          m68k->sp[6]
 #define REG_SP           m68k->dar[15]
+#define REG_VBR          m68k->vbr
+#define REG_SFC          m68k->sfc
+#define REG_DFC          m68k->dfc
+#define REG_CACR         m68k->cacr
+#define REG_CAAR         m68k->caar
+#define REG_IR           m68k->ir
 
 #define REG_FP           m68k->fpr
 #define REG_FPCR         m68k->fpcr
@@ -225,7 +231,9 @@
 #define REG_FPIAR        m68k->fpiar
 
 #define FLAG_T1          m68k->t1_flag
+#define FLAG_T0          m68k->t0_flag
 #define FLAG_S           m68k->s_flag
+#define FLAG_M           m68k->m_flag
 #define FLAG_X           m68k->x_flag
 #define FLAG_N           m68k->n_flag
 #define FLAG_Z           m68k->not_z_flag
@@ -233,6 +241,22 @@
 #define FLAG_C           m68k->c_flag
 #define FLAG_INT_MASK    m68k->int_mask
 
+#define CPU_INT_LEVEL    m68k->int_level
+
+#if M68K_EMULATE_INT_ACK
+#define CALLBACK_INT_ACK     m68k->int_ack_callback
+#endif
+#if M68K_EMULATE_BKPT_ACK
+#define CALLBACK_BKPT_ACK    m68k->bkpt_ack_callback
+#endif
+#if M68K_EMULATE_RESET
+#define CALLBACK_RESET_INSTR m68k->reset_instr_callback
+#endif
+//#define CALLBACK_PC_CHANGED  m68k->pc_changed_callback
+#if M68K_EMULATE_FC
+#define CALLBACK_SET_FC      m68k->set_fc_callback
+#endif
+//#define CALLBACK_INSTR_HOOK  m68k->instr_hook_callback
 
 /* ----------------------------- Configuration ---------------------------- */
 

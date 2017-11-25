@@ -285,42 +285,25 @@ void M68K::UpdateSysBanking(void)
 void M68K::ZomgSaveReg(Zomg_M68KRegSave_t *state)
 {
 	// NOTE: Byteswapping is done in libzomg.
-	
-#if 0
-	struct S68000CONTEXT m68k_context;
-	main68k_GetContext(&m68k_context);
+	int i;
 	
 	// Save the main registers.
-	for (int i = 0; i < 8; i++)
-		state->dreg[i] = m68k_context.dreg[i];
-	for (int i = 0; i < 7; i++)
-		state->areg[i] = m68k_context.areg[i];
+	for (i = 0; i < 8; i++)
+		state->dreg[i] = m68k_get_reg(&ms_Context, (m68k_register_t)(M68K_REG_D0 + i));
+	for (i = 0; i < 7; i++)
+		state->areg[i] = m68k_get_reg(&ms_Context, (m68k_register_t)(M68K_REG_A0 + i));
 	
 	// Save the stack pointers.
-	if (m68k_context.sr & 0x2000) {
-		// Supervisor mode.
-		// m68k_context.areg[7] == ssp
-		// m68k_context.asp     == usp
-		state->ssp = m68k_context.areg[7];
-		state->usp = m68k_context.asp;
-	} else {
-		// User mode.
-		// m68k_context.areg[7] == usp
-		// m68k_context.asp     == ssp
-		state->ssp = m68k_context.asp;
-		state->usp = m68k_context.areg[7];
-	}
+	state->ssp = ms_Context.s_flag ? ms_Context.dar[15] : ms_Context.sp[0];
+	state->usp = m68k_get_reg(&ms_Context, M68K_REG_USP);
 
 	// Other registers.
-	state->pc = m68k_context.pc;
-	state->sr = m68k_context.sr;
+	state->pc = m68k_get_reg(&ms_Context, M68K_REG_PC);
+	state->sr = m68k_get_reg(&ms_Context, M68K_REG_SR);
 
 	// Reserved fields.
 	state->reserved1 = 0;
 	state->reserved2 = 0;
-#else
-	memset(state, 0x00, sizeof(*state));
-#endif /* GENS_ENABLE_EMULATION */
 }
 
 
@@ -330,36 +313,22 @@ void M68K::ZomgSaveReg(Zomg_M68KRegSave_t *state)
  */
 void M68K::ZomgRestoreReg(const Zomg_M68KRegSave_t *state)
 {
-#if 0
-	main68k_GetContext(&ms_Context);
-
 	// Load the main registers.
 	for (int i = 0; i < 8; i++)
-		ms_Context.dreg[i] = state->dreg[i];
+		m68k_set_reg(&ms_Context, (m68k_register_t)(M68K_REG_D0 + i), state->dreg[i]);
 	for (int i = 0; i < 7; i++)
-		ms_Context.areg[i] = state->areg[i];
-
-	// Load the stack pointers.
-	if (ms_Context.sr & 0x2000) {
-		// Supervisor mode.
-		// ms_Context.areg[7] == ssp
-		// ms_Context.asp     == usp
-		ms_Context.areg[7] = state->ssp;
-		ms_Context.asp     = state->usp;
-	} else {
-		// User mode.
-		// ms_Context.areg[7] == usp
-		// ms_Context.asp     == ssp
-		ms_Context.asp     = state->ssp;
-		ms_Context.areg[7] = state->usp;
-	}
+		m68k_set_reg(&ms_Context, (m68k_register_t)(M68K_REG_A0 + i), state->areg[i]);
 
 	// Other registers.
-	ms_Context.pc = state->pc;
-	ms_Context.sr = state->sr;
+	m68k_set_reg(&ms_Context, M68K_REG_PC, state->pc);
+	m68k_set_reg(&ms_Context, M68K_REG_SR, state->sr);
 
-	main68k_SetContext(&ms_Context);
-#endif /* GENS_ENABLE_EMULATION */
+	// Load the stack pointers.
+	m68k_set_reg(&ms_Context, M68K_REG_USP, state->usp);
+	if ( ms_Context.s_flag )
+		ms_Context.dar[15] = state->ssp;
+	else
+		ms_Context.sp[0] = state->ssp;
 }
 
 }

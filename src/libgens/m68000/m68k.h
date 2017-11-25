@@ -179,40 +179,46 @@ typedef unsigned int uint;
 /* Registers used by m68k_get_reg() and m68k_set_reg() */
 typedef enum
 {
-  /* Real registers */
-  M68K_REG_D0,    /* Data registers */
-  M68K_REG_D1,
-  M68K_REG_D2,
-  M68K_REG_D3,
-  M68K_REG_D4,
-  M68K_REG_D5,
-  M68K_REG_D6,
-  M68K_REG_D7,
-  M68K_REG_A0,    /* Address registers */
-  M68K_REG_A1,
-  M68K_REG_A2,
-  M68K_REG_A3,
-  M68K_REG_A4,
-  M68K_REG_A5,
-  M68K_REG_A6,
-  M68K_REG_A7,
-  M68K_REG_PC,    /* Program Counter */
-  M68K_REG_SR,    /* Status Register */
-  M68K_REG_SP,    /* The current Stack Pointer (located in A7) */
-  M68K_REG_USP,   /* User Stack Pointer */
-  M68K_REG_ISP,   /* Interrupt Stack Pointer */
+	/* Real registers */
+	M68K_REG_D0,		/* Data registers */
+	M68K_REG_D1,
+	M68K_REG_D2,
+	M68K_REG_D3,
+	M68K_REG_D4,
+	M68K_REG_D5,
+	M68K_REG_D6,
+	M68K_REG_D7,
+	M68K_REG_A0,		/* Address registers */
+	M68K_REG_A1,
+	M68K_REG_A2,
+	M68K_REG_A3,
+	M68K_REG_A4,
+	M68K_REG_A5,
+	M68K_REG_A6,
+	M68K_REG_A7,
+	M68K_REG_PC,		/* Program Counter */
+	M68K_REG_SR,		/* Status Register */
+	M68K_REG_SP,		/* The current Stack Pointer (located in A7) */
+	M68K_REG_USP,		/* User Stack Pointer */
+	M68K_REG_ISP,		/* Interrupt Stack Pointer */
+	M68K_REG_MSP,		/* Master Stack Pointer */
+	M68K_REG_SFC,		/* Source Function Code */
+	M68K_REG_DFC,		/* Destination Function Code */
+	M68K_REG_VBR,		/* Vector Base Register */
+	M68K_REG_CACR,		/* Cache Control Register */
+	M68K_REG_CAAR,		/* Cache Address Register */
 
-#if M68K_EMULATE_PREFETCH
-  /* Assumed registers */
-  /* These are cheat registers which emulate the 1-longword prefetch
-   * present in the 68000 and 68010.
-   */
-  M68K_REG_PREF_ADDR,  /* Last prefetch address */
-  M68K_REG_PREF_DATA,  /* Last prefetch data */
-#endif
+	/* Assumed registers */
+	/* These are cheat registers which emulate the 1-longword prefetch
+	 * present in the 68000 and 68010.
+	 */
+	M68K_REG_PREF_ADDR,	/* Last prefetch address */
+	M68K_REG_PREF_DATA,	/* Last prefetch data */
 
-  /* Convenience registers */
-  M68K_REG_IR    /* Instruction register */
+	/* Convenience registers */
+	M68K_REG_PPC,		/* Previous value in the program counter */
+	M68K_REG_IR,		/* Instruction register */
+	M68K_REG_CPU_TYPE	/* Type of CPU being run */
 } m68k_register_t;
 
 
@@ -367,7 +373,7 @@ struct _m68ki_cpu_core
  * services the interrupt.
  * Default behavior: return M68K_INT_ACK_AUTOVECTOR.
  */
-void m68k_set_int_ack_callback(int  (*callback)(void *param, int int_level));
+void m68k_set_int_ack_callback(m68ki_cpu_core *cpu, int  (*callback)(void *param, int int_level));
 #endif
 
 #if M68K_EMULATE_RESET == OPT_ON
@@ -376,7 +382,7 @@ void m68k_set_int_ack_callback(int  (*callback)(void *param, int int_level));
  * The CPU calls this callback every time it encounters a RESET instruction.
  * Default behavior: do nothing.
  */
-void m68k_set_reset_instr_callback(void  (*callback)(void *param));
+void m68k_set_reset_instr_callback(m68ki_cpu_core *cpu, void  (*callback)(void *param));
 #endif
 
 #if M68K_TAS_HAS_CALLBACK == OPT_ON
@@ -385,7 +391,7 @@ void m68k_set_reset_instr_callback(void  (*callback)(void *param));
  * The CPU calls this callback every time it encounters a TAS instruction.
  * Default behavior: return 1, allow writeback.
  */
-void m68k_set_tas_instr_callback(int  (*callback)(void *param));
+void m68k_set_tas_instr_callback(m68ki_cpu_core *cpu, int  (*callback)(void *param));
 #endif
 
 #if M68K_EMULATE_FC == OPT_ON
@@ -396,7 +402,7 @@ void m68k_set_tas_instr_callback(int  (*callback)(void *param));
  * access it is (supervisor/user, program/data and such).
  * Default behavior: do nothing.
  */
-void m68k_set_fc_callback(void  (*callback)(m68ki_cpu_core *cpu, unsigned int new_fc));
+void m68k_set_fc_callback(m68ki_cpu_core *cpu, void  (*callback)(m68ki_cpu_core *cpu, unsigned int new_fc));
 #endif
 
 
