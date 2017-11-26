@@ -25,6 +25,7 @@
 
 // C includes.
 #include <string.h>
+#include <stdio.h>
 
 // LOG_MSG() subsystem.
 #include "libgens/macros/log_msg.h"
@@ -304,10 +305,12 @@ int GensPortAudio::write(void)
 	} else {
 		written = SoundMgr::writeMono(m_tmpWriteBuf, segLength);
 	}
+	
+	written *= m_sampleSize;
 
 	// Copy from the bounce buffer to the ring buffer.
 	int16_t *buf = &m_buffer[m_bufferPos>>1];
-	memcpy(buf, m_tmpWriteBuf, written * m_sampleSize);
+	memcpy(buf, m_tmpWriteBuf, written);
 
 	// Increment the buffer position.
 	m_bufferPos += written;

@@ -313,10 +313,12 @@ void M68K::ZomgSaveReg(Zomg_M68KRegSave_t *state)
  */
 void M68K::ZomgRestoreReg(const Zomg_M68KRegSave_t *state)
 {
+	int i;
+	
 	// Load the main registers.
-	for (int i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++)
 		m68k_set_reg(&ms_Context, (m68k_register_t)(M68K_REG_D0 + i), state->dreg[i]);
-	for (int i = 0; i < 7; i++)
+	for (i = 0; i < 7; i++)
 		m68k_set_reg(&ms_Context, (m68k_register_t)(M68K_REG_A0 + i), state->areg[i]);
 
 	// Other registers.
