@@ -113,10 +113,6 @@ void M68K::SetFetch(unsigned low_addr, unsigned high_addr, void *base)
 		if ( i >= 256 )
 			return;
 		ms_Context.memory_map[i].base = (unsigned char *)base;
-		/*ms_Context.memory_map[i].read8 = NULL;
-		ms_Context.memory_map[i].read16 = NULL;
-		ms_Context.memory_map[i].write8 = NULL;
-		ms_Context.memory_map[i].write16 = NULL;*/
 		base += 0x10000;
 	}
 }
@@ -128,7 +124,6 @@ void M68K::SetMemReadFunc(unsigned low_addr, unsigned high_addr,
 	int i;
 	for ( i = (low_addr >> 16); i <= (high_addr >> 16); i ++ )
 	{
-		//ms_Context.memory_map[i].param = this;
 		ms_Context.memory_map[i].read8 = read8;
 		ms_Context.memory_map[i].read16 = read16;
 	}
@@ -141,7 +136,6 @@ void M68K::SetMemWriteFunc(unsigned low_addr, unsigned high_addr,
 	int i;
 	for ( i = (low_addr >> 16); i <= (high_addr >> 16); i ++ )
 	{
-		//ms_Context.memory_map[i].param = this;
 		ms_Context.memory_map[i].write8 = write8;
 		ms_Context.memory_map[i].write16 = write16;
 	}
@@ -154,18 +148,12 @@ void M68K::Init(void)
 {
 	// Clear the 68000 context.
 	memset( &ms_Context, 0, sizeof(ms_Context) );
+	
 	m68k_init(&ms_Context);
-
-	// Initialize the memory handlers.
-	SetMemReadFunc(0x000000, 0xFEFFFF, Gens_M68K_RB, Gens_M68K_RW);
-	SetMemWriteFunc(0x000000, 0xFEFFFF, Gens_M68K_WB, Gens_M68K_WW);
-	SetFetch(0xFF0000, 0xFFFFFF, Ram_68k.u8);
 	
 	ms_Context.reset_instr_callback = M68K_Reset_Handler;
 	
 	ms_Context.int_ack_callback = M68K_Int_Ack;
-
-	//m68k_pulse_reset(&ms_Context);
 }
 
 /**
@@ -182,11 +170,18 @@ void M68K::End(void)
  */
 void M68K::InitSys(SysID system)
 {
+	m_cycleCnt = 0;
+	
 	// TODO: This is not 64-bit clean!
 	ms_LastSysID = system;
 
 	// Clear M68K RAM.
 	memset(Ram_68k.u8, 0x00, sizeof(Ram_68k.u8));
+	
+	// Initialize the memory handlers.
+	SetMemReadFunc(0x000000, 0xFEFFFF, Gens_M68K_RB, Gens_M68K_RW);
+	SetMemWriteFunc(0x000000, 0xFEFFFF, Gens_M68K_WB, Gens_M68K_WW);
+	SetFetch(0xFF0000, 0xFFFFFF, Ram_68k.u8);
 
 	// Initialize the M68K memory handlers.
 	M68K_Mem::InitSys(system);
@@ -209,13 +204,14 @@ void M68K::InitSys(SysID system)
  */
 void M68K::EndSys(void)
 {
-	for (int i = 0; i < 256; i++) {
+	/*for (int i = 0; i < 256; i++) {
+		ms_Context.memory_map[i].base = NULL;
 		ms_Context.memory_map[i].read8 = dummy_read;
 		ms_Context.memory_map[i].read16 = dummy_read;
 		ms_Context.memory_map[i].write8 = dummy_write;
 		ms_Context.memory_map[i].write16 = dummy_write;
-	}
-	
+	}*/
+	memset( ms_Context.memory_map, 0, sizeof(ms_Context.memory_map) );
 }
 
 /**
