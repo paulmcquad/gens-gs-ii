@@ -34,99 +34,111 @@
 
 namespace LibGens {
 
-S68000CONTEXT M68K::ms_Context;
-
-// Instruction fetch.
-STARSCREAM_PROGRAMREGION M68K::M68K_Fetch[] =
-{
-#ifdef GENS_ENABLE_EMULATION
-	// 32 entries for RAM, including mirrors.
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-
-	// 64 entries for ROM handlers.
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-	{~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0}, {~0U, ~0U, 0},
-#endif /* GENS_ENABLE_EMULATION */
-	
-	// Terminator.
-	{~0U, ~0U, 0}
-};
-
-// M68K Starscream has a hack for RAM mirroring for data read.
-STARSCREAM_DATAREGION M68K::M68K_Read_Byte[4] =
-{
-#ifdef GENS_ENABLE_EMULATION
-	// TODO: 0x9FFFFF is valid for MD only.
-	{0x000000, 0x9FFFFF, NULL, NULL},
-	{0xFF0000, 0xFFFFFF, NULL, &Ram_68k.u8[0]},
-	{0xA00000, 0xFEFFFF, (void*)M68K_Mem::M68K_RB, NULL},
-#endif /* GENS_ENABLE_EMULATION */
-	{~0U, ~0U, NULL, NULL}
-};
-
-// M68K Starscream has a hack for RAM mirroring for data read.
-STARSCREAM_DATAREGION M68K::M68K_Read_Word[4] =
-{
-#ifdef GENS_ENABLE_EMULATION
-	// TODO: 0x9FFFFF is valid for MD only.
-	{0x000000, 0x9FFFFF, NULL, NULL},
-	{0xFF0000, 0xFFFFFF, NULL, &Ram_68k.u8[0]},
-	{0xA00000, 0xFEFFFF, (void*)M68K_Mem::M68K_RW, NULL},
-#endif /* GENS_ENABLE_EMULATION */
-	{~0U, ~0U, NULL, NULL}
-};
-
-// M68K Starscream has a hack for RAM mirroring for data write.
-STARSCREAM_DATAREGION M68K::M68K_Write_Byte[3] =
-{
-#ifdef GENS_ENABLE_EMULATION
-	{0xFF0000, 0xFFFFFF, NULL, &Ram_68k.u8[0]},
-	{0x000000, 0xFEFFFF, (void*)M68K_Mem::M68K_WB, NULL},
-#endif /* GENS_ENABLE_EMULATION */
-	{~0U, ~0U, NULL, NULL}
-};
-
-// M68K Starscream has a hack for RAM mirroring for data write.
-STARSCREAM_DATAREGION M68K::M68K_Write_Word[3] =
-{
-#ifdef GENS_ENABLE_EMULATION
-	{0xFF0000, 0xFFFFFF, NULL, &Ram_68k.u8[0]},
-	{0x000000, 0xFEFFFF, (void*)M68K_Mem::M68K_WW, NULL},
-#endif /* GENS_ENABLE_EMULATION */
-	{~0U, ~0U, NULL, NULL}
-};
+m68ki_cpu_core M68K::ms_Context;
+int M68K::m_cycleCnt;
+int M68K::m_intVectors[8];
 
 // Last system ID.
 M68K::SysID M68K::ms_LastSysID = SYSID_NONE;
+
+
+// C wrapper functions for Starscream.
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static unsigned int Gens_M68K_RB(void *param, unsigned int address)
+{
+	return LibGens::M68K_Mem::M68K_RB(address);
+}
+static unsigned int Gens_M68K_RW(void *param, unsigned int address)
+{
+	return LibGens::M68K_Mem::M68K_RW(address);
+}
+static void Gens_M68K_WB(void *param, unsigned int address, unsigned int data)
+{
+	LibGens::M68K_Mem::M68K_WB(address, data);
+}
+static void Gens_M68K_WW(void *param, unsigned int address, unsigned int data)
+{
+	LibGens::M68K_Mem::M68K_WW(address, data);
+}
+
+uint8_t VDP_Int_Ack(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * Reset handler.
  * TODO: What does this function do?
  */
-void M68K::M68K_Reset_Handler(void)
+void M68K::M68K_Reset_Handler(m68ki_cpu_core *cpu)
 {
 	//Init_Memory_M68K(GENESIS);
+}
+
+int M68K::M68K_Int_Ack(m68ki_cpu_core *cpu, int int_level)
+{
+	if ( (int_level == 4) || (int_level == 6) )
+		VDP_Int_Ack();
+
+	m68k_set_irq(cpu, int_level, RESET_LINE);
+	return m_intVectors[int_level];
+}
+
+static unsigned int dummy_read(void *param, unsigned int address)
+{
+	(void) param;
+	(void) address;
+	return ~0;
+}
+
+static void dummy_write(void *param, unsigned int address, unsigned int data)
+{
+	(void) param;
+	(void) address;
+	(void) data;
+}
+
+
+void M68K::SetFetch(unsigned low_addr, unsigned high_addr, void *base)
+{
+	unsigned i;
+
+	base -= (low_addr & 0xFFFF);
+	for ( i = (low_addr >> 16); i <= (high_addr >> 16); i ++ )
+	{
+		if ( i >= 256 )
+			return;
+		ms_Context.memory_map[i].base = (unsigned char *)base;
+		base += 0x10000;
+	}
+}
+
+void M68K::SetMemReadFunc(unsigned low_addr, unsigned high_addr,
+	unsigned int (*read8)(void *param, unsigned int address),
+	unsigned int (*read16)(void *param, unsigned int address))
+{
+	int i;
+	for ( i = (low_addr >> 16); i <= (high_addr >> 16); i ++ )
+	{
+		ms_Context.memory_map[i].read8 = read8;
+		ms_Context.memory_map[i].read16 = read16;
+	}
+}
+
+void M68K::SetMemWriteFunc(unsigned low_addr, unsigned high_addr,
+	void (*write8)(void *param, unsigned int address, unsigned int data),
+	void (*write16)(void *param, unsigned int address, unsigned int data))
+{
+	int i;
+	for ( i = (low_addr >> 16); i <= (high_addr >> 16); i ++ )
+	{
+		ms_Context.memory_map[i].write8 = write8;
+		ms_Context.memory_map[i].write16 = write16;
+	}
 }
 
 /**
@@ -135,31 +147,13 @@ void M68K::M68K_Reset_Handler(void)
 void M68K::Init(void)
 {
 	// Clear the 68000 context.
-	memset(&ms_Context, 0x00, sizeof(ms_Context));
-
-	// Initialize the memory handlers.
-	ms_Context.s_fetch = ms_Context.u_fetch =
-		ms_Context.fetch = M68K_Fetch;
-
-	ms_Context.s_readbyte = ms_Context.u_readbyte =
-		ms_Context.readbyte = M68K_Read_Byte;
-
-	ms_Context.s_readword = ms_Context.u_readword =
-		ms_Context.readword = M68K_Read_Word;
-
-	ms_Context.s_writebyte = ms_Context.u_writebyte =
-		ms_Context.writebyte = M68K_Write_Byte;
-
-	ms_Context.s_writeword = ms_Context.u_writeword =
-		ms_Context.writeword = M68K_Write_Word;
-
-	ms_Context.resethandler = M68K_Reset_Handler;
-
-#ifdef GENS_ENABLE_EMULATION
-	// Set up the main68k context.
-	main68k_SetContext(&ms_Context);
-	main68k_init();
-#endif /* GENS_ENABLE_EMULATION */
+	memset( &ms_Context, 0, sizeof(ms_Context) );
+	
+	m68k_init(&ms_Context);
+	
+	ms_Context.reset_instr_callback = M68K_Reset_Handler;
+	
+	ms_Context.int_ack_callback = M68K_Int_Ack;
 }
 
 /**
@@ -176,30 +170,33 @@ void M68K::End(void)
  */
 void M68K::InitSys(SysID system)
 {
+	m_cycleCnt = 0;
+	
 	// TODO: This is not 64-bit clean!
 	ms_LastSysID = system;
 
 	// Clear M68K RAM.
 	memset(Ram_68k.u8, 0x00, sizeof(Ram_68k.u8));
+	
+	// Initialize the memory handlers.
+	SetMemReadFunc(0x000000, 0xFEFFFF, Gens_M68K_RB, Gens_M68K_RW);
+	SetMemWriteFunc(0x000000, 0xFEFFFF, Gens_M68K_WB, Gens_M68K_WW);
+	SetFetch(0xFF0000, 0xFFFFFF, Ram_68k.u8);
 
 	// Initialize the M68K memory handlers.
 	M68K_Mem::InitSys(system);
 
-#ifdef GENS_ENABLE_EMULATION
 	// Initialize M68K RAM handlers.
 	for (int i = 0; i < 32; i++) {
 		uint32_t ram_addr = (0xE00000 | (i << 16));
-		M68K_Fetch[i].lowaddr = ram_addr;
-		M68K_Fetch[i].highaddr = (ram_addr | 0xFFFF);
-		M68K_Fetch[i].offset = ((uint32_t)(&Ram_68k.u8[0]) - ram_addr);
+		SetFetch(ram_addr, ram_addr | 0xFFFF, Ram_68k.u8);
 	}
 
 	// Update the system-specific banking setup.
 	UpdateSysBanking();
 
 	// Reset the M68K CPU.
-	main68k_reset();
-#endif /* GENS_ENABLE_EMULATION */
+	Reset();
 }
 
 /**
@@ -207,11 +204,14 @@ void M68K::InitSys(SysID system)
  */
 void M68K::EndSys(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(M68K_Fetch); i++) {
-		M68K_Fetch[i].lowaddr = -1;
-		M68K_Fetch[i].highaddr = -1;
-		M68K_Fetch[i].offset = 0;
-	}
+	/*for (int i = 0; i < 256; i++) {
+		ms_Context.memory_map[i].base = NULL;
+		ms_Context.memory_map[i].read8 = dummy_read;
+		ms_Context.memory_map[i].read16 = dummy_read;
+		ms_Context.memory_map[i].write8 = dummy_write;
+		ms_Context.memory_map[i].write16 = dummy_write;
+	}*/
+	memset( ms_Context.memory_map, 0, sizeof(ms_Context.memory_map) );
 }
 
 /**
@@ -227,7 +227,7 @@ void M68K::UpdateSysBanking(void)
 		case SYSID_PICO:
 			// Sega Genesis / Mega Drive.
 			// Also Pico. (This only adds cartridge ROM.)
-			cur_fetch += M68K_Mem::UpdateSysBanking(&M68K_Fetch[cur_fetch], 10);
+			cur_fetch += M68K_Mem::UpdateSysBanking(10);
 			break;
 
 		case SYSID_MCD:
@@ -268,11 +268,6 @@ void M68K::UpdateSysBanking(void)
 			break;
 	}
 
-	// Set the terminator.
-	M68K_Fetch[cur_fetch].lowaddr = -1;
-	M68K_Fetch[cur_fetch].highaddr = -1;
-	M68K_Fetch[cur_fetch].offset = 0;
-
 	// FIXME: Make sure Starscream's internal program counter
 	// is updated to reflect the updated M68K_Fetch[].
 }
@@ -286,42 +281,25 @@ void M68K::UpdateSysBanking(void)
 void M68K::ZomgSaveReg(Zomg_M68KRegSave_t *state)
 {
 	// NOTE: Byteswapping is done in libzomg.
-	
-#ifdef GENS_ENABLE_EMULATION
-	struct S68000CONTEXT m68k_context;
-	main68k_GetContext(&m68k_context);
+	int i;
 	
 	// Save the main registers.
-	for (int i = 0; i < 8; i++)
-		state->dreg[i] = m68k_context.dreg[i];
-	for (int i = 0; i < 7; i++)
-		state->areg[i] = m68k_context.areg[i];
+	for (i = 0; i < 8; i++)
+		state->dreg[i] = m68k_get_reg(&ms_Context, (m68k_register_t)(M68K_REG_D0 + i));
+	for (i = 0; i < 7; i++)
+		state->areg[i] = m68k_get_reg(&ms_Context, (m68k_register_t)(M68K_REG_A0 + i));
 	
 	// Save the stack pointers.
-	if (m68k_context.sr & 0x2000) {
-		// Supervisor mode.
-		// m68k_context.areg[7] == ssp
-		// m68k_context.asp     == usp
-		state->ssp = m68k_context.areg[7];
-		state->usp = m68k_context.asp;
-	} else {
-		// User mode.
-		// m68k_context.areg[7] == usp
-		// m68k_context.asp     == ssp
-		state->ssp = m68k_context.asp;
-		state->usp = m68k_context.areg[7];
-	}
+	state->ssp = ms_Context.s_flag ? ms_Context.dar[15] : ms_Context.sp[0];
+	state->usp = m68k_get_reg(&ms_Context, M68K_REG_USP);
 
 	// Other registers.
-	state->pc = m68k_context.pc;
-	state->sr = m68k_context.sr;
+	state->pc = m68k_get_reg(&ms_Context, M68K_REG_PC);
+	state->sr = m68k_get_reg(&ms_Context, M68K_REG_SR);
 
 	// Reserved fields.
 	state->reserved1 = 0;
 	state->reserved2 = 0;
-#else
-	memset(state, 0x00, sizeof(*state));
-#endif /* GENS_ENABLE_EMULATION */
 }
 
 
@@ -331,36 +309,24 @@ void M68K::ZomgSaveReg(Zomg_M68KRegSave_t *state)
  */
 void M68K::ZomgRestoreReg(const Zomg_M68KRegSave_t *state)
 {
-#ifdef GENS_ENABLE_EMULATION
-	main68k_GetContext(&ms_Context);
-
+	int i;
+	
 	// Load the main registers.
-	for (int i = 0; i < 8; i++)
-		ms_Context.dreg[i] = state->dreg[i];
-	for (int i = 0; i < 7; i++)
-		ms_Context.areg[i] = state->areg[i];
-
-	// Load the stack pointers.
-	if (ms_Context.sr & 0x2000) {
-		// Supervisor mode.
-		// ms_Context.areg[7] == ssp
-		// ms_Context.asp     == usp
-		ms_Context.areg[7] = state->ssp;
-		ms_Context.asp     = state->usp;
-	} else {
-		// User mode.
-		// ms_Context.areg[7] == usp
-		// ms_Context.asp     == ssp
-		ms_Context.asp     = state->ssp;
-		ms_Context.areg[7] = state->usp;
-	}
+	for (i = 0; i < 8; i++)
+		m68k_set_reg(&ms_Context, (m68k_register_t)(M68K_REG_D0 + i), state->dreg[i]);
+	for (i = 0; i < 7; i++)
+		m68k_set_reg(&ms_Context, (m68k_register_t)(M68K_REG_A0 + i), state->areg[i]);
 
 	// Other registers.
-	ms_Context.pc = state->pc;
-	ms_Context.sr = state->sr;
+	m68k_set_reg(&ms_Context, M68K_REG_PC, state->pc);
+	m68k_set_reg(&ms_Context, M68K_REG_SR, state->sr);
 
-	main68k_SetContext(&ms_Context);
-#endif /* GENS_ENABLE_EMULATION */
+	// Load the stack pointers.
+	m68k_set_reg(&ms_Context, M68K_REG_USP, state->usp);
+	if ( ms_Context.s_flag )
+		ms_Context.dar[15] = state->ssp;
+	else
+		ms_Context.sp[0] = state->ssp;
 }
 
 }

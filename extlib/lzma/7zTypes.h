@@ -79,6 +79,11 @@ typedef unsigned long UInt64;
 typedef __int64 Int64;
 typedef unsigned __int64 UInt64;
 #define UINT64_CONST(n) n
+#elif defined(__unix__)
+#include <stdint.h>
+typedef int64_t Int64;
+typedef uint64_t UInt64;
+#define UINT64_CONST(n) n ## ULL
 #else
 typedef long long int Int64;
 typedef unsigned long long int UInt64;

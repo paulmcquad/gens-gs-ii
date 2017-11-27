@@ -27,9 +27,6 @@
 // C includes.
 #include <stdint.h>
 
-// Starscream.
-#include "libgens/cpu/star_68k.h"
-
 // SRam and EEPRom.
 #include "Save/SRam.hpp"
 #include "Save/EEPRomI2C.hpp"
@@ -85,7 +82,7 @@ class RomCartridgeMD
 		 * @param banks Maximum number of banks to update.
 		 * @return Number of banks updated.
 		 */
-		int updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int banks);
+		int updateSysBanking(int banks);
 
 		/**
 		 * Fix the ROM checksum.

@@ -33,7 +33,6 @@
 #include "libcompat/byteswap.h"
 
 // M68K CPU.
-#include "cpu/star_68k.h"
 #include "cpu/M68K_Mem.hpp"
 #include "Cartridge/RomCartridgeMD.hpp"
 
@@ -111,7 +110,8 @@ void Vdp::updateIRQLine(int interrupt)
 	// No VDP interrupts.
 	// TODO: Move to M68K class.
 #ifdef GENS_ENABLE_EMULATION
-	main68k_context.interrupts[0] &= 0xF0;
+	M68K::Interrupt(0, -1);
+	//main68k_context.interrupts[0] &= 0xF0;
 #endif /* GENS_ENABLE_EMULATION */
 }
 

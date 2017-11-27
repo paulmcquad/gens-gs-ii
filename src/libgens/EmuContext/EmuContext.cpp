@@ -34,14 +34,17 @@ using std::string;
 
 #include "lg_osd.h"
 
+// Objects.
+#include "Vdp/Vdp.hpp"
+#include "cpu/Z80.hpp"
+
 // ROM data access.
 // TODO: Move ROM data to a cartridge class?
 // NOTE: Currently only needed for fixChecksum() / restoreChecksum().
 // Maybe fixChecksum() / restoreChecksum() should be moved to EmuMD.
 #include "cpu/M68K_Mem.hpp"
 
-namespace LibGens
-{
+namespace LibGens {
 
 // Reference counter.
 // We're only allowing one emulation context at the moment.
@@ -69,6 +72,7 @@ bool EmuContext::ms_TmssEnabled = false;
  * @param region System region. (not used in the base class)
  */
 EmuContext::EmuContext(Rom *rom, SysVersion::RegionCode_t region)
+	: m_z80(nullptr)
 {
 	init(nullptr, rom, region);
 }
@@ -80,6 +84,7 @@ EmuContext::EmuContext(Rom *rom, SysVersion::RegionCode_t region)
  * @param region System region. (not used in the base class)
  */
 EmuContext::EmuContext(MdFb *fb, Rom *rom, SysVersion::RegionCode_t region)
+	: m_z80(nullptr)
 {
 	init(fb, rom, region);
 }
@@ -112,6 +117,9 @@ void EmuContext::init(MdFb *fb, Rom *rom, SysVersion::RegionCode_t region)
 	// Initialize the VDP.
 	// TODO: Apply user-specified VDP options.
 	m_vdp = new Vdp(fb);
+
+	// NOTE: Z80 is NOT initialized here.
+	// It is initialized by the subclass if it's needed.
 }
 
 EmuContext::~EmuContext()
@@ -124,11 +132,11 @@ EmuContext::~EmuContext()
 	//delete m_ioManager;
 	//m_ioManager = nullptr;
 
-	// Delete the VDP.
+	// Delete any allocated objects.
 	delete m_vdp;
-	m_vdp = nullptr;
+	delete m_z80;
+	M68K_Mem::ms_Z80 = nullptr;
 }
-
 
 /**
  * Set the SRam/EEPRom save path [static]

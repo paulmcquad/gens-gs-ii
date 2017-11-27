@@ -30,9 +30,6 @@
 // C includes. (C++ namespace)
 #include <climits>
 
-// Starscream.
-#include "libgens/cpu/star_68k.h"
-
 namespace LibGens {
 
 class TmssReg
@@ -114,7 +111,7 @@ class TmssReg
 		 * @param banks Maximum number of banks to update.
 		 * @return Number of banks updated.
 		 */
-		int updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int banks);
+		int updateSysBanking(int banks);
 
 	private:
 		// TMSS ROM data. (Should be a power of two.)

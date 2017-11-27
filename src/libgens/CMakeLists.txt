@@ -2,10 +2,8 @@ PROJECT(libgens)
 cmake_minimum_required(VERSION 2.6.0)
 
 # LibGens subprojects.
-IF(GENS_ENABLE_EMULATION)
-	ADD_SUBDIRECTORY(starscream)
-	ADD_SUBDIRECTORY(mdZ80)
-ENDIF(GENS_ENABLE_EMULATION)
+ADD_SUBDIRECTORY(m68000)
+ADD_SUBDIRECTORY(cz80)
 
 # Main binary directory. Needed for git_version.h
 INCLUDE_DIRECTORIES(${gens-gs-ii_BINARY_DIR})
@@ -218,7 +216,7 @@ TARGET_LINK_LIBRARIES(gens compat genstext ${ZLIB_LIBRARY} gensfile zomg)
 
 # Additional libraries.
 IF(GENS_ENABLE_EMULATION)
-	TARGET_LINK_LIBRARIES(gens starscream mdZ80)
+	TARGET_LINK_LIBRARIES(gens m68k cz80)
 ENDIF(GENS_ENABLE_EMULATION)
 IF(HAVE_CLOCK_GETTIME_IN_LIBRT)
 	TARGET_LINK_LIBRARIES(gens ${RT_LIBRARY})

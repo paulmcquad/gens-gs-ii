@@ -21,7 +21,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.           *
  ***************************************************************************/
 
-#include "Z80_MD_Mem.hpp"
+#include "Z80.hpp"
 
 // Unused parameter macro.
 // TODO: Move somewhere else?
@@ -37,36 +37,7 @@
 // EmuContext
 #include "EmuContext/EmuContext.hpp"
 
-#if defined(__APPLE__) && defined(__MACH__) && \
-    (defined(__i386__) || defined(__amd64__) || defined(__x86_64__))
-// Mac OS X requires 16-byte aligned stacks.
-// Otherwise, the program will randomly crash in
-// __dyld_misaligned_stack_error().
-// (The crash might not even be immediately after
-// calling the C function!)
-#define FORCE_STACK_ALIGNMENT
-#endif
-#define FORCE_STACK_ALIGNMENT
-
-// TODO: mdZ80 accesses Ram_Z80 directly.
-// Move Ram_Z80 back to Z80_MD_Mem once mdZ80 is updated.
-uint8_t Ram_Z80[8 * 1024];
-
-namespace LibGens
-{
-
-// Static class variables.
-int Z80_MD_Mem::Bank_Z80;
-
-void Z80_MD_Mem::Init(void)
-{
-	// TODO
-}
-
-void Z80_MD_Mem::End(void)
-{
-	// TODO
-}
+namespace LibGens {
 
 /** Z80 Read Byte functions. **/
 
@@ -75,17 +46,17 @@ void Z80_MD_Mem::End(void)
  * @param address Address to read from.
  * @return YM2612 register.
  */
-inline uint8_t Z80_MD_Mem::Z80_ReadB_YM2612(uint32_t address)
+inline uint8_t Z80::Z80_MD_ReadB_YM2612(uint16_t address)
 {
 	// According to the Genesis Software Manual, all four addresses return
 	// the same value for YM2612_Read().
 	UNUSED(address);
-	
+
 	// The YM2612's RESET line is tied to the Z80's RESET line.
 	// TODO: Determine the correct return value.
 	if (M68K_Mem::Z80_State & Z80_STATE_RESET)
 		return 0xFF;
-	
+
 	// Return the YM2612 status register.
 	return SoundMgr::ms_Ym2612.read();
 }
@@ -95,7 +66,7 @@ inline uint8_t Z80_MD_Mem::Z80_ReadB_YM2612(uint32_t address)
  * @param address Address to read from.
  * @return VDP register.
  */
-inline uint8_t Z80_MD_Mem::Z80_ReadB_VDP(uint32_t address)
+inline uint8_t Z80::Z80_MD_ReadB_VDP(uint16_t address)
 {
 	if (address < 0x7F00) {
 		// Not in VDP range.
@@ -166,17 +137,17 @@ inline uint8_t Z80_MD_Mem::Z80_ReadB_VDP(uint32_t address)
  * @param address Address to read from.
  * @return Byte from MC68000 ROM.
  */
-inline uint8_t Z80_MD_Mem::Z80_ReadB_68K_Rom(uint32_t address)
+inline uint8_t Z80::Z80_MD_ReadB_68K_Rom(uint16_t address)
 {
 	// Z80 cannot read from M68K RAM.
 	// If this is attempted, 0xFF will be returned.
 	// Reference: http://gendev.spritesmind.net/forum/viewtopic.php?t=985
-	if (Bank_Z80 >= 0xE00000)
+	if (m_bankZ80 >= 0xE00000)
 		return 0xFF;
-	
-	address &= 0x7FFF;
-	address |= Bank_Z80;
-	return M68K_Mem::M68K_RB(address);
+
+	uint32_t M68K_addr = address & 0x7FFF;
+	M68K_addr |= m_bankZ80;
+	return M68K_Mem::M68K_RB(M68K_addr);
 }
 
 /** Z80 Write Byte functions. **/
@@ -186,16 +157,16 @@ inline uint8_t Z80_MD_Mem::Z80_ReadB_68K_Rom(uint32_t address)
  * @param address Address to write to.
  * @param data Byte to write.
  */
-inline void Z80_MD_Mem::Z80_WriteB_Bank(uint32_t address, uint8_t data)
+inline void Z80::Z80_MD_WriteB_Bank(uint16_t address, uint8_t data)
 {
 	if (address > 0x60FF) {
 		// TODO: Invalid address. This should do something.
 		return;
 	}
 
-	uint32_t bank_address = ((Bank_Z80 & 0xFF0000) >> 1);
+	uint32_t bank_address = ((m_bankZ80 & 0xFF0000) >> 1);
 	bank_address |= ((data & 1) << 23);
-	Bank_Z80 = bank_address;
+	m_bankZ80 = bank_address;
 }
 
 /**
@@ -203,12 +174,12 @@ inline void Z80_MD_Mem::Z80_WriteB_Bank(uint32_t address, uint8_t data)
  * @param address Address to write to.
  * @param data Byte to write.
  */
-inline void Z80_MD_Mem::Z80_WriteB_YM2612(uint32_t address, uint8_t data)
+inline void Z80::Z80_MD_WriteB_YM2612(uint16_t address, uint8_t data)
 {
 	// The YM2612's RESET line is tied to the Z80's RESET line.
 	if (M68K_Mem::Z80_State & Z80_STATE_RESET)
 		return;
-	
+
 	// Write to the YM2612.
 	SoundMgr::ms_Ym2612.write(address & 0x03, data);
 }
@@ -218,7 +189,7 @@ inline void Z80_MD_Mem::Z80_WriteB_YM2612(uint32_t address, uint8_t data)
  * @param address Address to write to.
  * @param data Byte to write.
  */
-inline void Z80_MD_Mem::Z80_WriteB_VDP(uint32_t address, uint8_t data)
+inline void Z80::Z80_MD_WriteB_VDP(uint16_t address, uint8_t data)
 {
 	if (address < 0x7F00) {
 		// Not in VDP range.
@@ -268,36 +239,37 @@ inline void Z80_MD_Mem::Z80_WriteB_VDP(uint32_t address, uint8_t data)
  * @param address Address to write to.
  * @param data Byte to write.
  */
-inline void Z80_MD_Mem::Z80_WriteB_68K_Rom(uint32_t address, uint8_t data)
+inline void Z80::Z80_MD_WriteB_68K_Rom(uint16_t address, uint8_t data)
 {
 	// NOTE: Z80 writes to M68K RAM are allowed.
 	// Reference: http://gendev.spritesmind.net/forum/viewtopic.php?t=985
-	
-	address &= 0x7FFF;
-	address |= Bank_Z80;
-	M68K_Mem::M68K_WB(address, data);
+	uint32_t M68K_addr = address & 0x7FFF;
+	M68K_addr |= m_bankZ80;
+	M68K_Mem::M68K_WB(M68K_addr, data);
 }
 
 /** Z80 General Read/Write functions. **/
 
 /**
  * Read a byte from the Z80 address space.
+ * @param ctx Context. (TODO)
  * @param address Address to read from.
  * @return Byte from the Z80 address space.
  */
-uint8_t Z80_MD_Mem::Z80_ReadB(uint32_t address)
+uint8_t CZ80CALL Z80::Z80_MD_ReadB_static(void *ctx, uint16_t address)
 {
+	Z80 *const z80 = (Z80*)ctx;
 	const uint8_t page = ((address >> 12) & 0x0F);
 	switch (page & 0x0F) {
 		case 0x00: case 0x01:
 		case 0x02: case 0x03:
 			// 0x0000-0x1FFF: Z80 RAM.
 			// 0x2000-0x3FFF: Z80 RAM. (mirror)
-			return Ram_Z80[address & 0x1FFF];
+			return z80->m_ramZ80[address & 0x1FFF];
 
 		case 0x04: case 0x05:
 			// 0x4000-0x5FFF: YM2612.
-			return Z80_ReadB_YM2612(address);
+			return z80->Z80_MD_ReadB_YM2612(address);
 
 		case 0x06:
 			// 0x6000-0x6FFF: Bank.
@@ -306,12 +278,12 @@ uint8_t Z80_MD_Mem::Z80_ReadB(uint32_t address)
 
 		case 0x07:
 			// 0x7000-0x7FFF: VDP.
-			return Z80_ReadB_VDP(address);
+			return z80->Z80_MD_ReadB_VDP(address);
 
 		case 0x08: case 0x09: case 0x0A: case 0x0B:
 		case 0x0C: case 0x0D: case 0x0E: case 0x0F:
 			// 0x8000-0xFFFF: 68K ROM bank.
-			return Z80_ReadB_68K_Rom(address);
+			return z80->Z80_MD_ReadB_68K_Rom(address);
 	}
 
 	// Should not get here...
@@ -320,39 +292,152 @@ uint8_t Z80_MD_Mem::Z80_ReadB(uint32_t address)
 
 /**
  * Write a byte to the Z80 address space.
+ * @param ctx Context. (TODO)
  * @param address Address to write to.
  * @param data Byte to write to the Z80 address space.
  */
-void Z80_MD_Mem::Z80_WriteB(uint32_t address, uint8_t data)
+void CZ80CALL Z80::Z80_MD_WriteB_static(void *ctx, uint16_t address, uint8_t data)
 {
+	Z80 *const z80 = (Z80*)ctx;
 	const uint8_t page = ((address >> 12) & 0x0F);
 	switch (page & 0x0F) {
 		case 0x00: case 0x01:
 		case 0x02: case 0x03:
 			// 0x0000-0x1FFF: Z80 RAM.
 			// 0x2000-0x3FFF: Z80 RAM. (mirror)
-			Ram_Z80[address & 0x1FFF] = data;
+			z80->m_ramZ80[address & 0x1FFF] = data;
 			break;
 
 		case 0x04: case 0x05:
 			// 0x4000-0x5FFF: YM2612.
-			Z80_WriteB_YM2612(address, data);
+			z80->Z80_MD_WriteB_YM2612(address, data);
 			break;
 
 		case 0x06:
 			// 0x6000-0x6FFF: Bank.
-			Z80_WriteB_Bank(address, data);
+			z80->Z80_MD_WriteB_Bank(address, data);
 			break;
 
 		case 0x07:
 			// 0x7000-0x7FFF: VDP.
-			Z80_WriteB_VDP(address, data);
+			z80->Z80_MD_WriteB_VDP(address, data);
 			break;
 
 		case 0x08: case 0x09: case 0x0A: case 0x0B:
 		case 0x0C: case 0x0D: case 0x0E: case 0x0F:
 			// 0x8000-0xFFFF: 68K ROM bank.
-			Z80_WriteB_68K_Rom(address, data);
+			z80->Z80_MD_WriteB_68K_Rom(address, data);
+			break;
+	}
+}
+
+/**
+ * Read a word from the Z80 address space.
+ * @param ctx Context. (TODO)
+ * @param address Address to read from.
+ * @return Word from the Z80 address space.
+ */
+uint16_t CZ80CALL Z80::Z80_MD_ReadW_static(void *ctx, uint16_t address)
+{
+	// NOTE: May have issues at the end of the 1 KB bank.
+	// TODO: unlikely()
+	if ((address & (CZ80_FETCH_BANK_SIZE-1)) == (CZ80_FETCH_BANK_SIZE-1)) {
+		// End of bank. Use 8-bit reads.
+		return Z80_MD_ReadB_static(ctx, address) |
+			(Z80_MD_ReadB_static(ctx, address+1) << 8);
+	}
+
+	Z80 *const z80 = (Z80*)ctx;
+	const uint8_t page = ((address >> 12) & 0x0F);
+	switch (page & 0x0F) {
+		case 0x00: case 0x01:
+		case 0x02: case 0x03:
+			// 0x0000-0x1FFF: Z80 RAM.
+			// 0x2000-0x3FFF: Z80 RAM. (mirror)
+			// TODO: Use 16-bit read on unaligned LE.
+			return z80->m_ramZ80[address & 0x1FFF] |
+				(z80->m_ramZ80[(address + 1) & 0x1FFF] << 8);
+
+		case 0x04: case 0x05:
+			// 0x4000-0x5FFF: YM2612.
+			return z80->Z80_MD_ReadB_YM2612(address) |
+				(z80->Z80_MD_ReadB_YM2612(address + 1) << 8);
+
+		case 0x06:
+			// 0x6000-0x6FFF: Bank.
+			// NOTE: Reading from the bank register is undefined...
+			return 0xFFFF;
+
+		case 0x07:
+			// 0x7000-0x7FFF: VDP.
+			return z80->Z80_MD_ReadB_VDP(address) |
+				(z80->Z80_MD_ReadB_VDP(address + 1) << 8);
+
+		case 0x08: case 0x09: case 0x0A: case 0x0B:
+		case 0x0C: case 0x0D: case 0x0E: case 0x0F:
+			// 0x8000-0xFFFF: 68K ROM bank.
+			// TODO: ReadW version?
+			return z80->Z80_MD_ReadB_68K_Rom(address) |
+				(z80->Z80_MD_ReadB_68K_Rom(address + 1) << 8);
+	}
+
+	// Should not get here...
+	return 0xFFFF;
+}
+
+/**
+ * Write a word to the Z80 address space.
+ * @param ctx Context. (TODO)
+ * @param address Address to write to.
+ * @param data Word to write to the Z80 address space.
+ */
+void CZ80CALL Z80::Z80_MD_WriteW_static(void *ctx, uint16_t address, uint16_t data)
+{
+	// NOTE: May have issues at the end of the 1 KB bank.
+	// TODO: unlikely()
+	if ((address & (CZ80_FETCH_BANK_SIZE-1)) == (CZ80_FETCH_BANK_SIZE-1)) {
+		// End of bank. Use 8-bit writes.
+		Z80_MD_WriteB_static(ctx, address, data & 0xFF);
+		Z80_MD_WriteB_static(ctx, address+1, data >> 8);
+		return;
+	}
+
+	Z80 *const z80 = (Z80*)ctx;
+	const uint8_t page = ((address >> 12) & 0x0F);
+	switch (page & 0x0F) {
+		case 0x00: case 0x01:
+		case 0x02: case 0x03:
+			// 0x0000-0x1FFF: Z80 RAM.
+			// 0x2000-0x3FFF: Z80 RAM. (mirror)
+			// TODO: Use 16-bit write on unaligned LE.
+			z80->m_ramZ80[address & 0x1FFF] = data & 0xFF;
+			z80->m_ramZ80[(address + 1) & 0x1FFF] = data >> 8;
+			break;
+
+		case 0x04: case 0x05:
+			// 0x4000-0x5FFF: YM2612.
+			z80->Z80_MD_WriteB_YM2612(address, data & 0xFF);
+			z80->Z80_MD_WriteB_YM2612(address + 1, data >> 8);
+			break;
+
+		case 0x06:
+			// 0x6000-0x6FFF: Bank.
+			z80->Z80_MD_WriteB_Bank(address, data & 0xFF);
+			z80->Z80_MD_WriteB_Bank(address + 1, data >> 8);
+			break;
+
+		case 0x07:
+			// 0x7000-0x7FFF: VDP.
+			z80->Z80_MD_WriteB_VDP(address, data & 0xFF);
+			z80->Z80_MD_WriteB_VDP(address + 1, data >> 8);
+			break;
+
+		case 0x08: case 0x09: case 0x0A: case 0x0B:
+		case 0x0C: case 0x0D: case 0x0E: case 0x0F:
+			// 0x8000-0xFFFF: 68K ROM bank.
+			// TODO: WriteW version?
+			z80->Z80_MD_WriteB_68K_Rom(address, data & 0xFF);
+			z80->Z80_MD_WriteB_68K_Rom(address + 1, data >> 8);
 			break;
 	}
 }

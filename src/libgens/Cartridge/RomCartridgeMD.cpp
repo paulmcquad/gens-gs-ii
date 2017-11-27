@@ -43,6 +43,7 @@
 
 // C includes. (C++ namespace)
 #include <cstdlib>
+#include <cstring>
 
 // C++ includes.
 #include <string>
@@ -492,9 +493,8 @@ bool RomCartridgeMD::isRomLoaded(void) const
  * @param banks Maximum number of banks to update.
  * @return Number of banks updated.
  */
-int RomCartridgeMD::updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int banks)
+int RomCartridgeMD::updateSysBanking(int banks)
 {
-#ifdef GENS_ENABLE_EMULATION
 	int banksUpdated = 0;
 	if (banks > ARRAY_SIZE(m_cartBanks))
 		banks = ARRAY_SIZE(m_cartBanks);
@@ -508,10 +508,7 @@ int RomCartridgeMD::updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int b
 			const uint32_t romAddrStart = (0x80000 * (m_cartBanks[i] - BANK_ROM_00));
 			if (romAddrStart < m_romData_size) {
 				// Valid bank. Map it.
-				M68K_Fetch->lowaddr = romAddrStart;
-				M68K_Fetch->highaddr = (romAddrStart + 0x7FFFF);
-				M68K_Fetch->offset = ((uint32_t)m_romData);
-				M68K_Fetch++;
+				M68K::SetFetch(romAddrStart, romAddrStart + 0x7FFFF, m_romData + romAddrStart);
 				banksUpdated++;
 			}
 		}
@@ -519,10 +516,6 @@ int RomCartridgeMD::updateSysBanking(STARSCREAM_PROGRAMREGION *M68K_Fetch, int b
 
 	// Updated.
 	return banksUpdated;
-#else /* !GENS_ENABLE_EMULATION */
-	// Emulation is disabled.
-	return 0;
-#endif /* GENS_ENABLE_EMULATION */
 }
 
 /**

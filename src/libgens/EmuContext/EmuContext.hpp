@@ -27,20 +27,19 @@
 // Controller I/O manager.
 #include "../IO/IoManager.hpp"
 
-// ROM image class.
-#include "../Rom.hpp"
-
 // Region code.
 // TODO: Make the region code non-console-specific.
 #include "SysVersion.hpp"
-
-// VDP.
-#include "../Vdp/Vdp.hpp"
 
 // C++ includes.
 #include <string>
 
 namespace LibGens {
+
+class Rom;
+class MdFb;
+class Vdp;
+class Z80;
 
 class EmuContext
 {
@@ -166,8 +165,11 @@ class EmuContext
 		static void SetTmssEnabled(bool tmssEnabled)
 			{ ms_TmssEnabled = tmssEnabled; }
 
-		/** VDP (TODO) **/
+		/** VDP (TODO: Make this non-public?) **/
 		Vdp *m_vdp;
+
+		/** Z80 (TODO: Make this non-public?) **/
+		Z80 *m_z80;
 
 		/**
 		 * Get the Rom class being used by this emulator context.
