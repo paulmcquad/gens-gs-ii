@@ -12,14 +12,15 @@
 
 EXTERN_C_BEGIN
 
-WRes HandlePtr_Close(HANDLE *h);
-WRes Handle_WaitObject(HANDLE h);
 
 typedef HANDLE CThread;
 #define Thread_Construct(p) *(p) = NULL
 #define Thread_WasCreated(p) (*(p) != NULL)
 #define Thread_Close(p) HandlePtr_Close(p)
 #define Thread_Wait(p) Handle_WaitObject(*(p))
+
+WRes HandlePtr_Close(HANDLE *h);
+WRes Handle_WaitObject(HANDLE h);
 
 typedef
 #ifdef UNDER_CE

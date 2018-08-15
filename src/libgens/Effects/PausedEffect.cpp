@@ -47,7 +47,7 @@
 #include "libcompat/cpuflags.h"
 
 #if defined(__GNUC__) && (defined(__i386__) || defined(__amd64__) || defined(__x86_64__))
-#define HAVE_MMX 1
+//#define HAVE_MMX 1
 #endif
 
 namespace LibGens {

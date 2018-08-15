@@ -30,12 +30,3 @@ ADD_LIBRARY(genscd STATIC ${libgenscd_SRCS})
 INCLUDE(SetMSVCDebugPath)
 SET_MSVC_DEBUG_PATH(genscd)
 TARGET_LINK_LIBRARIES(genscd genstext)
-
-# LibGensCD test program.
-SET(genscd_test_SRCS
-	CdDriveTest.cpp
-	)
-
-# Build the test program.
-ADD_EXECUTABLE(genscd_test ${genscd_test_SRCS})
-TARGET_LINK_LIBRARIES(genscd_test genscd)

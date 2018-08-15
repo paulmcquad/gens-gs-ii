@@ -70,22 +70,10 @@ IF(NOT DEFINED libcompat_ARCH_SPECIFIC_SRCS)
 		MESSAGE(FATAL_ERROR "CMAKE_SYSTEM_PROCESSOR is empty.")
 	ENDIF(NOT CMAKE_SYSTEM_PROCESSOR)
 	STRING(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" arch)
-	IF(arch MATCHES "^(i.|x)86$|^x86_64$|^amd64$")
-		SET(libcompat_ARCH_SPECIFIC_SRCS
-			cpuflags_x86.c
-			byteswap_x86.c
-			)
-	ELSEIF(arch MATCHES "powerpc|powerpc-eabi")
-		SET(libcompat_ARCH_SPECIFIC_SRCS
-			cpuflags_ppc.c
-			byteswap.c
-			)
-	ELSE()
 		SET(libcompat_ARCH_SPECIFIC_SRCS
 			cpuflags.c
 			byteswap.c
 			)
-	ENDIF()
 	UNSET(arch)
 ENDIF(NOT DEFINED libcompat_ARCH_SPECIFIC_SRCS)
 

@@ -35,7 +35,7 @@
 #include <cstring>
 
 #if defined(__GNUC__) && (defined(__i386__) || defined(__amd64__) || defined(__x86_64__))
-#define HAVE_MMX
+//#define HAVE_MMX
 #endif
 
 namespace LibGens {
@@ -121,19 +121,19 @@ const uint32_t FastBlurPrivate::MASK_DIV2_16_MMX[2] = {0x7BCF7BCF, 0x7BCF7BCF};
 // Generic versions.
 #define __IN_LIBGENS_FASTBLUR_CPP__
 #define DO_1FB
-#include "FastBlur.generic.inc.cpp"
+#include "FastBlur.generic.inc"
 #undef DO_1FB
 #define DO_2FB
-#include "FastBlur.generic.inc.cpp"
+#include "FastBlur.generic.inc"
 #undef DO_2FB
 
 // MMX/SSE2-optimized versions.
 #ifdef HAVE_MMX
 #define DO_1FB
-#include "FastBlur.x86.inc.cpp"
+#include "FastBlur.x86.inc"
 #undef DO_1FB
 #define DO_2FB
-#include "FastBlur.x86.inc.cpp"
+#include "FastBlur.x86.inc"
 #undef DO_2FB
 #endif /* HAVE_MMX */
 

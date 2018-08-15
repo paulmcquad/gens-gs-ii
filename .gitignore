@@ -3,7 +3,8 @@
 *.o
 *.a
 *.so
-
+*.zip
+*.md
 # Directories and specific filenames.
 /FOR FUTURE USE/
 /gens_gs.kdev*

@@ -21,7 +21,7 @@ SET(lzma_SRCS
 	Ppmd7.c
 	Ppmd7Dec.c
 	Sha256.c
-	Xz.c
+	Xz_og.c
 	XzCrc64.c
 	XzCrc64Opt.c
 	XzDec.c

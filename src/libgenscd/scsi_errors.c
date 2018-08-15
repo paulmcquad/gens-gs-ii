@@ -29,6 +29,7 @@
 #include "scsi_errors.h"
 
 // C includes.
+#include <stdint.h>
 #include <string.h>
 
 /**

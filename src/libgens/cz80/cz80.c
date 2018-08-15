@@ -30,7 +30,7 @@
 //////////////////////
 
 #define IS_IN_CZ80 1
-#include "cz80.inc.c"
+#include "cz80.inc"
 
 // shared global variable
 //////////////////////////
@@ -165,7 +165,7 @@ void Cz80_Free(cz80_struc *cpu)
 
 /////////////////////////////////
 
-#include "cz80exec.inc.c"
+#include "cz80exec.inc"
 
 /////////////////////////////////
 

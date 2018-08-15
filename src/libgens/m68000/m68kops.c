@@ -1,4 +1,8 @@
 #include "m68kcpu.h"
+//#include "mame.h"
+extern void m68040_fpu_op0(m68ki_cpu_core *m68k);
+extern void m68040_fpu_op1(m68ki_cpu_core *m68k);
+extern void m68881_mmu_ops(m68ki_cpu_core *m68k);
 
 /* ======================================================================== */
 /* ========================= INSTRUCTION HANDLERS ========================= */
@@ -19,12 +23,22 @@ static void m68k_op_1111(m68ki_cpu_core *m68k)
 
 static void m68k_op_040fpu0_32(m68ki_cpu_core *m68k)
 {
+	if(CPU_TYPE_IS_030_PLUS(m68k->cpu_type))
+	{
+		m68040_fpu_op0(m68k);
+		return;
+	}
 	m68ki_exception_1111(m68k);
 }
 
 
 static void m68k_op_040fpu1_32(m68ki_cpu_core *m68k)
 {
+	if(CPU_TYPE_IS_030_PLUS(m68k->cpu_type))
+	{
+		m68040_fpu_op1(m68k);
+		return;
+	}
 	m68ki_exception_1111(m68k);
 }
 
@@ -8051,6 +8065,13 @@ static void m68k_op_bftst_32_pcix(m68ki_cpu_core *m68k)
 
 static void m68k_op_bkpt(m68ki_cpu_core *m68k)
 {
+#if M68K_EMULATE_BKPT_ACK
+	if(CPU_TYPE_IS_010_PLUS(m68k->cpu_type))
+	{
+		if (m68k->bkpt_ack_callback)
+			(*m68k->bkpt_ack_callback)(m68k->device, CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type) ? m68k->ir & 7 : 0);
+	}
+#endif
 	m68ki_exception_illegal(m68k);
 }
 
@@ -8535,6 +8556,8 @@ static void m68k_op_callm_32_ai(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -8551,6 +8574,8 @@ static void m68k_op_callm_32_di(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -8567,6 +8592,8 @@ static void m68k_op_callm_32_ix(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -8583,6 +8610,8 @@ static void m68k_op_callm_32_aw(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -8599,6 +8628,8 @@ static void m68k_op_callm_32_al(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -8615,6 +8646,8 @@ static void m68k_op_callm_32_pcdi(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -8631,6 +8664,8 @@ static void m68k_op_callm_32_pcix(m68ki_cpu_core *m68k)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		REG_PC += 2;
 (void)ea;	/* just to avoid an 'unused variable' warning */
+		logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -11919,6 +11954,11 @@ static void m68k_op_cmpi_32_d(m68ki_cpu_core *m68k)
 	UINT32 src = OPER_I_32(m68k);
 	UINT32 dst = DY;
 	UINT32 res = dst - src;
+	
+#if M68K_CMPILD_HAS_CALLBACK
+	if (m68k->cmpild_instr_callback)
+		(*m68k->cmpild_instr_callback)(m68k->device, src, m68k->ir & 7);
+#endif
 
 	m68k->n_flag = NFLAG_32(res);
 	m68k->not_z_flag = MASK_OUT_ABOVE_32(res);
@@ -12136,6 +12176,8 @@ static void m68k_op_cpbcc_32(m68ki_cpu_core *m68k)
 {
 	if(CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type))
 	{
+		logerror( "%s at %08x: called unimplemented instruction %04x (cpbcc)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_1111(m68k);
@@ -12146,6 +12188,8 @@ static void m68k_op_cpdbcc_32(m68ki_cpu_core *m68k)
 {
 	if(CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type))
 	{
+		logerror("%s at %08x: called unimplemented instruction %04x (cpdbcc)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_1111(m68k);
@@ -12156,6 +12200,8 @@ static void m68k_op_cpgen_32(m68ki_cpu_core *m68k)
 {
 	if(CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type))
 	{
+		logerror("%s at %08x: called unimplemented instruction %04x (cpgen)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_1111(m68k);
@@ -12166,6 +12212,8 @@ static void m68k_op_cpscc_32(m68ki_cpu_core *m68k)
 {
 	if(CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type))
 	{
+		logerror("%s at %08x: called unimplemented instruction %04x (cpscc)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_1111(m68k);
@@ -12176,6 +12224,8 @@ static void m68k_op_cptrapcc_32(m68ki_cpu_core *m68k)
 {
 	if(CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type))
 	{
+		logerror("%s at %08x: called unimplemented instruction %04x (cptrapcc)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_1111(m68k);
@@ -25984,12 +26034,26 @@ static void m68k_op_pea_32_pcix(m68ki_cpu_core *m68k)
 
 static void m68k_op_pflush_32(m68ki_cpu_core *m68k)
 {
+#if M68K_EMULATE_MMU
+	if ((CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type)) && (m68k->has_pmmu))
+	{
+		logerror("68040: unhandled PFLUSH\n");
+		return;
+	}
+#endif
 	m68ki_exception_1111(m68k);
 }
 
 
 static void m68k_op_pmmu_32(m68ki_cpu_core *m68k)
 {
+#if M68K_EMULATE_MMU
+	if ((CPU_TYPE_IS_EC020_PLUS(m68k->cpu_type)) && (m68k->has_pmmu))
+	{
+		m68881_mmu_ops(m68k);
+	}
+	else
+#endif
 	{
 		m68ki_exception_1111(m68k);
 	}
@@ -26000,6 +26064,10 @@ static void m68k_op_reset(m68ki_cpu_core *m68k)
 {
 	if(m68k->s_flag)
 	{
+#if M68K_EMULATE_RESET
+		if (m68k->reset_instr_callback)
+			(*m68k->reset_instr_callback)(m68k->device);
+#endif
 		m68k->remaining_cycles -= m68k->cyc_reset;
 		return;
 	}
@@ -27088,6 +27156,10 @@ static void m68k_op_rte_32(m68ki_cpu_core *m68k)
 		UINT32 new_pc;
 		UINT32 format_word;
 
+#if M68K_RTE_HAS_CALLBACK
+		if (m68k->rte_instr_callback)
+			(*m68k->rte_instr_callback)(m68k->device);
+#endif
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 
 		if(CPU_TYPE_IS_000(m68k->cpu_type))
@@ -27101,7 +27173,6 @@ static void m68k_op_rte_32(m68ki_cpu_core *m68k)
 			m68k->instr_mode = INSTRUCTION_YES;
 			m68k->run_mode = RUN_MODE_NORMAL;
 #endif
-
 			return;
 		}
 
@@ -27182,6 +27253,8 @@ static void m68k_op_rtm_32(m68ki_cpu_core *m68k)
 	if(CPU_TYPE_IS_020_VARIANT(m68k->cpu_type))
 	{
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
+		logerror("%s at %08x: called unimplemented instruction %04x (rtm)\n",
+					 m68k->device->tag, REG_PC - 2, m68k->ir);
 		return;
 	}
 	m68ki_exception_illegal(m68k);
@@ -30641,10 +30714,14 @@ static void m68k_op_tas_8_ai(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30662,10 +30739,14 @@ static void m68k_op_tas_8_pi(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30683,10 +30764,14 @@ static void m68k_op_tas_8_pi7(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30704,10 +30789,14 @@ static void m68k_op_tas_8_pd(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30725,10 +30814,14 @@ static void m68k_op_tas_8_pd7(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30746,10 +30839,14 @@ static void m68k_op_tas_8_di(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30767,10 +30864,14 @@ static void m68k_op_tas_8_ix(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30788,10 +30889,14 @@ static void m68k_op_tas_8_aw(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
@@ -30809,10 +30914,14 @@ static void m68k_op_tas_8_al(m68ki_cpu_core *m68k)
 	m68k->v_flag = VFLAG_CLEAR;
 	m68k->c_flag = CFLAG_CLEAR;
 
+#if M68K_TAS_HAS_CALLBACK
 	/* The Genesis/Megadrive games Gargoyles and Ex-Mutants need the TAS writeback
        disabled in order to function properly.  Some Amiga software may also rely
        on this, but only when accessing specific addresses so additional functionality
        will be needed. */
+	if (m68k->tas_instr_callback)
+		allow_writeback = (*m68k->tas_instr_callback)(m68k->device);
+#endif
 
 	if (allow_writeback)
 		m68ki_write_8(m68k, ea, dst | 0x80);
