@@ -1,4 +1,4 @@
-PRGNAME     = potator
+PRGNAME     = gens-gs-ii
 
 # define regarding OS, which compiler to use
 EXESUFFIX = 
@@ -8,8 +8,8 @@ CCP         = g++
 LD          = gcc
 
 # add SDL dependencies
-SDL_LIB     = 
-SDL_INCLUDE = 
+#SDL_LIB     = /usr/lib
+#SDL_INCLUDE = /usr/include/SDL
 
 # change compilation / linking flag options
 F_OPTS		= -DHOME_SUPPORT
